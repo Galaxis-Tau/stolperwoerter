@@ -1,4 +1,4 @@
-# Stolperwörtertest – Form B
+# Stolperwörtertest 
 
 Eine webbasierte Version des **Stolperwörtertests** für den Einsatz im Unterricht oder zur Leseförderung.
 
