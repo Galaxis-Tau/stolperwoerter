@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stolperwörtertest – Form B</title>
+  <style>
+    :root {
+      --bg: #f6f7fb;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #2563eb;
+      --accent-dark: #1d4ed8;
+      --good: #16a34a;
+      --bad: #dc2626;
+      --border: #e5e7eb;
+      --selected: #dbeafe;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    .app {
+      width: min(900px, 100%);
+      background: var(--card);
+      border-radius: 24px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.12);
+      padding: clamp(24px, 5vw, 48px);
+    }
+
+    h1, h2 {
+      margin: 0 0 16px;
+      line-height: 1.15;
+    }
+
+    h1 { font-size: clamp(2rem, 5vw, 3rem); }
+    h2 { font-size: clamp(1.7rem, 4vw, 2.4rem); }
+
+    p {
+      color: var(--muted);
+      font-size: 1.08rem;
+      line-height: 1.6;
+    }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+
+    .timer {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .progress {
+      color: var(--muted);
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .sentence-card {
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: clamp(20px, 4vw, 36px);
+      background: #fbfdff;
+      margin-bottom: 24px;
+    }
+
+    .words {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      font-size: clamp(1.35rem, 4vw, 2.2rem);
+      line-height: 1.5;
+    }
+
+    .word {
+      appearance: none;
+      border: 2px solid transparent;
+      background: #fff;
+      color: var(--text);
+      border-radius: 14px;
+      padding: 6px 10px;
+      font: inherit;
+      cursor: pointer;
+      transition: 0.15s ease;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+    }
+
+    .word:hover,
+    .word:focus-visible {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .word.selected {
+      background: var(--selected);
+      border-color: var(--accent);
+      color: var(--accent-dark);
+    }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    button.primary,
+    button.secondary {
+      border: none;
+      border-radius: 999px;
+      padding: 14px 22px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.15s ease;
+    }
+
+    button.primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    button.primary:hover { background: var(--accent-dark); }
+
+    button.secondary {
+      background: #eef2ff;
+      color: var(--accent-dark);
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+    }
+
+    .hint {
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin: 28px 0;
+    }
+
+    .stat {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 2.2rem;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat span { color: var(--muted); }
+
+    .review {
+      margin-top: 24px;
+      border-top: 1px solid var(--border);
+      padding-top: 18px;
+      max-height: 300px;
+      overflow: auto;
+    }
+
+    .review-item {
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.95rem;
+    }
+
+    .ok { color: var(--good); font-weight: 700; }
+    .wrong { color: var(--bad); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section id="startScreen" class="screen active">
+      <h1>Stolperwörtertest</h1>
+      <p>
+        Du hast 4 Minuten Zeit. Lies jeden Satz und klicke das Wort an, das nicht dazugehört.
+        Danach kommst du automatisch zum nächsten Satz. Mit „Weiter“ kannst du einen Satz auch ohne Auswahl überspringen.
+      </p>
+      <div class="actions">
+        <button class="primary" id="startBtn">Jetzt starten</button>
+      </div>
+    </section>
+
+    <section id="testScreen" class="screen">
+      <div class="topbar">
+        <div>
+          <div class="progress" id="progressText">Satz 1 von 60</div>
+          <div class="hint">Klicke auf das Stolperwort.</div>
+        </div>
+        <div class="timer" id="timer">04:00</div>
+      </div>
+
+      <div class="sentence-card">
+        <div class="words" id="words"></div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="nextBtn">Weiter</button>
+        <button class="secondary" id="finishBtn">Test beenden</button>
+      </div>
+    </section>
+
+    <section id="resultScreen" class="screen">
+      <h2>Auswertung</h2>
+      <p id="resultIntro">Der Test ist beendet.</p>
+
+      <div class="stats-grid">
+        <div class="stat"><strong id="readCount">0</strong><span>bearbeitete Sätze</span></div>
+        <div class="stat"><strong id="correctCount">0</strong><span>richtig erkannt</span></div>
+        <div class="stat"><strong id="wrongCount">0</strong><span>falsch / übersprungen</span></div>
+        <div class="stat"><strong id="percentCount">0%</strong><span>Trefferquote</span></div>
+      </div>
+
+      <div class="actions">
+        <button class="primary" id="restartBtn">Noch einmal starten</button>
+      </div>
+
+      <div class="review" id="review"></div>
+    </section>
+  </main>
+
+  <script>
+    const sentences = [
+      { id: 1, text: "Mir gefällt dein schön Bild gut.", error: "schön" },
+      { id: 2, text: "Im Winter eisig ist es oft kalt.", error: "eisig" },
+      { id: 3, text: "Mein Heft ist schreiben voll.", error: "schreiben" },
+      { id: 4, text: "Mein Bruder ist gestern acht Jahre alt.", error: "gestern" },
+      { id: 5, text: "Der Hund bellt Wut.", error: "Wut" },
+      { id: 6, text: "Die ist Kinder lernen in der Schule.", error: "ist" },
+      { id: 7, text: "Gruselig vor Spinnen ekle ich mich.", error: "Gruselig" },
+      { id: 8, text: "Lieb meine Oma ist schon sehr alt.", error: "Lieb" },
+      { id: 9, text: "Es regnet den ganzen nass Tag.", error: "nass" },
+      { id: 10, text: "In dem Buch Geschichten sind Bilder.", error: "Geschichten" },
+      { id: 11, text: "Die Aufgaben liest sind schwer.", error: "liest" },
+      { id: 12, text: "Ich Buch kann sehr gut lesen.", error: "Buch" },
+      { id: 13, text: "Möchtest du ein Bonbon süß?", error: "süß" },
+      { id: 14, text: "Mein Bleistift anspitzen ist abgebrochen.", error: "anspitzen" },
+      { id: 15, text: "Das Fenster steht kalt offen.", error: "kalt" },
+      { id: 16, text: "Magst Schokolade du gern Nudeln?", error: "Schokolade" },
+      { id: 17, text: "Die Kinder laut rennen schreiend auf den Hof.", error: "laut" },
+      { id: 18, text: "Meine Küche Mutter kocht sehr gut.", error: "Küche" },
+      { id: 19, text: "Das Wasser ist schmutzig Tafel.", error: "Tafel" },
+      { id: 20, text: "Auf Opas Nase sitzt eine summt Fliege.", error: "summt" },
+      { id: 21, text: "Rechnest oder liest aber du lieber?", error: "aber" },
+      { id: 22, text: "Die Himmel Sonne blendet mich.", error: "Himmel" },
+      { id: 23, text: "Mit Opa habe ich Korb Pilze gesucht.", error: "Korb" },
+      { id: 24, text: "Eine Maus klein flitzt unter den Schrank.", error: "klein" },
+      { id: 25, text: "In der durstig Wüste gibt es kein Wasser.", error: "durstig" },
+      { id: 26, text: "Zu Weihnachten wünsche Zettel ich mir Bücher.", error: "Zettel" },
+      { id: 27, text: "Der Polizist Uniform erzählt uns vom Verkehr.", error: "Uniform" },
+      { id: 28, text: "Bald nächste Woche wandern wir im Wald.", error: "Bald" },
+      { id: 29, text: "Hast du eine jung Lehrerin oder einen Lehrer?", error: "jung" },
+      { id: 30, text: "In unserer Schule gibt es nur wenige der Computer.", error: "der" },
+      { id: 31, text: "Ich spiele möchte gerne Klavier spielen lernen.", error: "spiele" },
+      { id: 32, text: "Spielen wir heute Nachmittag Garten zusammen?", error: "Garten" },
+      { id: 33, text: "Hast du mein rechnen Heft gesehen?", error: "rechnen" },
+      { id: 34, text: "Der Bus nach ist uns vor der Nase weggefahren.", error: "nach" },
+      { id: 35, text: "Unser Klassenzimmer ist oft schmutzig Besen.", error: "Besen" },
+      { id: 36, text: "Die Hexe reitet auf einem das Besen.", error: "das" },
+      { id: 37, text: "Der Mann ist bei eilig Rot über die Straße gelaufen.", error: "eilig" },
+      { id: 38, text: "Bald wollen wir den Zoo besuchen Tiere.", error: "Tiere" },
+      { id: 39, text: "Ich Angst gehe nicht gern zum Zahnarzt.", error: "Angst" },
+      { id: 40, text: "Alle Mädchen in die unserer Klasse mögen Pferde.", error: "die" },
+      { id: 41, text: "Wir sollen keinen schmiert Kugelschreiber benutzen.", error: "schmiert" },
+      { id: 42, text: "Die zwei Clowns Zirkus haben sich auf die Nase gehauen.", error: "Zirkus" },
+      { id: 43, text: "Unser Nachbar spielt Trompete und blasen Posaune.", error: "blasen" },
+      { id: 44, text: "Was morgen wünschst du dir zu deinem Geburtstag?", error: "morgen" },
+      { id: 45, text: "Torte backen mit Erdbeeren esse ich besonders gern.", error: "Torte" },
+      { id: 46, text: "Ich lustig denke mir gerne verrückte Geschichten aus.", error: "lustig" },
+      { id: 47, text: "Meine Schwester trainiert fast schnell jeden Tag im Verein.", error: "schnell" },
+      { id: 48, text: "Ich habe einen Glas ganzen Sack voller Murmeln.", error: "Glas" },
+      { id: 49, text: "Der neben Elefant hat sich auf seine Hinterbeine gestellt.", error: "neben" },
+      { id: 50, text: "Ich bin gestern Geisterstunde Nacht spät ins Bett gegangen.", error: "Geisterstunde" },
+      { id: 51, text: "Füchse frisst gibt es auch in unseren Wäldern.", error: "frisst" },
+      { id: 52, text: "Grunzen Wildschweine haben den Boden aufgewühlt.", error: "Grunzen" },
+      { id: 53, text: "Meine Mutter lobt mich wegen meiner sauber Handschrift.", error: "sauber" },
+      { id: 54, text: "In der Theatergruppe proben wir Vorstellung ein lustiges Stück.", error: "Vorstellung" },
+      { id: 55, text: "Hinter unserem Haus klettert steht ein uralter Birnbaum.", error: "klettert" },
+      { id: 56, text: "Der Hausmeister unserer Schule ist beim Schneefegen ausgerutscht hin und hat sich die Hand verstaucht.", error: "hin" },
+      { id: 57, text: "Bei manchen Textaufgaben mit komme ich ganz schön ins Schwitzen.", error: "mit" },
+      { id: 58, text: "Meinen Turnbeutel muss ich in der Halle liegen vergessen gelassen haben.", error: "liegen" },
+      { id: 59, text: "Die meisten Jungen aus unserer Klasse trainieren schwimmen in einem Fußballverein.", error: "schwimmen" },
+      { id: 60, text: "In den großen Ferien Sommer möchte ich am liebsten mit anderen Kindern zusammen verreisen.", error: "Sommer" }
+    ];
+
+    const DURATION_SECONDS = 4 * 60;
+
+    let currentIndex = 0;
+    let remaining = DURATION_SECONDS;
+    let timerId = null;
+    let answers = [];
+    let selectedWord = null;
+    let activeSentences = [];
+
+    const startScreen = document.getElementById("startScreen");
+    const testScreen = document.getElementById("testScreen");
+    const resultScreen = document.getElementById("resultScreen");
+    const startBtn = document.getElementById("startBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const finishBtn = document.getElementById("finishBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const wordsEl = document.getElementById("words");
+    const timerEl = document.getElementById("timer");
+    const progressText = document.getElementById("progressText");
+
+    function showScreen(screen) {
+      [startScreen, testScreen, resultScreen].forEach(el => el.classList.remove("active"));
+      screen.classList.add("active");
+    }
+
+    function formatTime(seconds) {
+      const safeSeconds = Math.max(0, seconds);
+      const m = String(Math.floor(safeSeconds / 60)).padStart(2, "0");
+      const s = String(safeSeconds % 60).padStart(2, "0");
+      return `${m}:${s}`;
+    }
+
+    function normalize(word) {
+      return word.replace(/[.,!?;:]/g, "").trim();
+    }
+
+    function shuffle(array) {
+      const copy = [...array];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [copy[i], copy[j]] = [copy[j], copy[i]];
+      }
+      return copy;
+    }
+
+    function createBalancedOrder(list) {
+      const validItems = list.filter(item => item && typeof item.text === "string" && typeof item.error === "string");
+      const sortedByLength = [...validItems].sort((a, b) => a.text.split(/\s+/).length - b.text.split(/\s+/).length);
+      const shortHalf = sortedByLength.slice(0, Math.ceil(sortedByLength.length / 2));
+      const longHalf = sortedByLength.slice(Math.ceil(sortedByLength.length / 2));
+      const shortItems = shuffle(shortHalf);
+      const longItems = shuffle(longHalf);
+      const result = [];
+
+      while (shortItems.length || longItems.length) {
+        if (shortItems.length && longItems.length) {
+          if (Math.random() < 0.5) {
+            result.push(shortItems.pop(), longItems.pop());
+          } else {
+            result.push(longItems.pop(), shortItems.pop());
+          }
+        } else if (shortItems.length) {
+          result.push(shortItems.pop());
+        } else if (longItems.length) {
+          result.push(longItems.pop());
+        }
+      }
+
+      return result.filter(Boolean);
+    }
+
+    function renderSentence() {
+      if (!activeSentences.length || currentIndex >= activeSentences.length) {
+        finishTest("Alle Sätze wurden bearbeitet.");
+        return;
+      }
+
+      const item = activeSentences[currentIndex];
+      if (!item || typeof item.text !== "string") {
+        finishTest("Der Test wurde beendet, weil ein Satz nicht gelesen werden konnte.");
+        return;
+      }
+
+      selectedWord = null;
+      progressText.textContent = `Satz ${currentIndex + 1} von ${activeSentences.length}`;
+      wordsEl.innerHTML = "";
+
+      item.text.split(" ").forEach(word => {
+        const btn = document.createElement("button");
+        btn.className = "word";
+        btn.type = "button";
+        btn.textContent = word;
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".word").forEach(w => w.classList.remove("selected"));
+          btn.classList.add("selected");
+          selectedWord = normalize(word);
+          recordAndAdvance();
+        });
+        wordsEl.appendChild(btn);
+      });
+    }
+
+    function recordAndAdvance() {
+      const item = activeSentences[currentIndex];
+      if (!item) return finishTest("Der Test wurde beendet, weil ein Satz nicht gelesen werden konnte.");
+
+      const alreadyAnswered = answers.some(a => a.runIndex === currentIndex);
+      if (!alreadyAnswered) {
+        answers.push({
+          runIndex: currentIndex,
+          id: item.id,
+          sentence: item.text,
+          selected: selectedWord,
+          correct: selectedWord === item.error,
+          expected: item.error
+        });
+      }
+
+      currentIndex += 1;
+      renderSentence();
+    }
+
+    function skipSentence() {
+      const item = activeSentences[currentIndex];
+      if (!item) return finishTest("Der Test wurde beendet, weil ein Satz nicht gelesen werden konnte.");
+
+      const alreadyAnswered = answers.some(a => a.runIndex === currentIndex);
+      if (!alreadyAnswered) {
+        answers.push({
+          runIndex: currentIndex,
+          id: item.id,
+          sentence: item.text,
+          selected: null,
+          correct: false,
+          expected: item.error
+        });
+      }
+
+      currentIndex += 1;
+      renderSentence();
+    }
+
+    function startTimer() {
+      timerEl.textContent = formatTime(remaining);
+      timerId = setInterval(() => {
+        remaining -= 1;
+        timerEl.textContent = formatTime(remaining);
+        if (remaining <= 0) {
+          finishTest("Die 4 Minuten sind vorbei.");
+        }
+      }, 1000);
+    }
+
+    function startTest() {
+      if (timerId) clearInterval(timerId);
+      activeSentences = createBalancedOrder(sentences);
+      currentIndex = 0;
+      remaining = DURATION_SECONDS;
+      answers = [];
+      selectedWord = null;
+      showScreen(testScreen);
+      renderSentence();
+      startTimer();
+    }
+
+    function finishTest(message = "Der Test ist beendet.") {
+      if (timerId) clearInterval(timerId);
+      timerId = null;
+      showScreen(resultScreen);
+
+      const read = answers.length;
+      const correct = answers.filter(a => a.correct).length;
+      const wrong = read - correct;
+      const percent = read === 0 ? 0 : Math.round((correct / read) * 100);
+
+      document.getElementById("resultIntro").textContent = message;
+      document.getElementById("readCount").textContent = read;
+      document.getElementById("correctCount").textContent = correct;
+      document.getElementById("wrongCount").textContent = wrong;
+      document.getElementById("percentCount").textContent = `${percent}%`;
+
+      const review = document.getElementById("review");
+      review.innerHTML = "<h3>Einzelübersicht</h3>";
+      answers.forEach(a => {
+        const div = document.createElement("div");
+        div.className = "review-item";
+        const chosen = a.selected ? `gewählt: <strong>${a.selected}</strong>` : "übersprungen";
+        div.innerHTML = `
+          <span class="${a.correct ? "ok" : "wrong"}">${a.correct ? "✓ richtig" : "✗ falsch"}</span>
+          · Original-Satz ${a.id}: ${chosen} · richtig: <strong>${a.expected}</strong><br>
+          <span>${a.sentence}</span>
+        `;
+        review.appendChild(div);
+      });
+    }
+
+    function runSelfTests() {
+      console.assert(sentences.length === 60, "Testdaten: Es müssen genau 60 Sätze vorhanden sein.");
+      console.assert(sentences.every(s => s && typeof s.text === "string" && typeof s.error === "string"), "Testdaten: Jeder Satz braucht text und error.");
+      const mixed = createBalancedOrder(sentences);
+      console.assert(mixed.length === sentences.length, "Mischung: Es müssen alle Sätze erhalten bleiben.");
+      console.assert(new Set(mixed.map(s => s.id)).size === sentences.length, "Mischung: Es dürfen keine Sätze doppelt vorkommen.");
+      console.assert(formatTime(240) === "04:00", "Timer: 240 Sekunden müssen als 04:00 angezeigt werden.");
+    }
+
+    startBtn.addEventListener("click", startTest);
+    nextBtn.addEventListener("click", skipSentence);
+    finishBtn.addEventListener("click", () => finishTest("Du hast den Test beendet."));
+    restartBtn.addEventListener("click", startTest);
+
+    runSelfTests();
+  </script>
+</body>
+</html>
